@@ -11,6 +11,8 @@ import java.nio.IntBuffer;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -47,7 +49,7 @@ public class Main {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
 
         // Create the window
-        window = glfwCreateWindow(300, 300, "Hello World!", NULL, NULL);
+        window = glfwCreateWindow(600, 600, "Hello World!", NULL, NULL);
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -56,6 +58,8 @@ public class Main {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
         });
+
+        glfwSetFramebufferSizeCallback(window, (window, width, height) -> glViewport(0, 0, width, height));
 
         // Get the thread stack and push a new frame
         try ( MemoryStack stack = stackPush() ) {
@@ -96,17 +100,92 @@ public class Main {
         // Set the clear color
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 
-        // Run the rendering loop until the user has attempted to close
-        // the window or has pressed the ESCAPE key.
-        while ( !glfwWindowShouldClose(window) ) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
+        String vertexShaderSource = "#version 330 core\n" +
+                "layout (location = 0) in vec3 aPos;\n" +
+                "void main()\n" +
+                "{\n" +
+                "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n" +
+                "}\0";
 
-            glfwSwapBuffers(window); // swap the color buffers
+        String fragmentShaderSource = "#version 330 core\n" +
+                "out vec4 FragColor;\n" +
+                "void main()\n" +
+                "{\n" +
+                "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n" +
+                "}\n\0";
 
-            // Poll for window events. The key callback above will only be
-            // invoked during this call.
+        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, vertexShaderSource);
+        glCompileShader(vertexShader);
+        if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
+            System.out.println("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" + glGetShaderInfoLog(vertexShader));
+        }
+
+        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, fragmentShaderSource);
+        glCompileShader(fragmentShader);
+        if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
+            System.out.println("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" + glGetShaderInfoLog(fragmentShader));
+        }
+
+
+        int shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+        glLinkProgram(shaderProgram);
+        if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
+            System.out.println("ERROR::SHADER::PROGRAM::LINKING_FAILED\n" + glGetProgramInfoLog(fragmentShader));
+        }
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        float[] vertices = {
+                0.5f,  0.5f, 0.0f,  // top right
+                0.5f, -0.5f, 0.0f,  // bottom right
+                -0.5f, -0.5f, 0.0f,  // bottom left
+                -0.5f,  0.5f, 0.0f   // top left
+        };
+        int[] indices = {
+                0, 1, 3,  // first Triangle
+                1, 2, 3   // second Triangle
+        };
+
+        int VBO, VAO, EBO;
+        VAO = glGenVertexArrays();
+        VBO = glGenBuffers();
+        EBO = glGenBuffers();
+
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * Float.BYTES, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        while (!glfwWindowShouldClose(window))
+        {
+            glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glUseProgram(shaderProgram);
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+            glfwSwapBuffers(window);
             glfwPollEvents();
         }
+
+        glDeleteVertexArrays(VAO);
+        glDeleteBuffers(VBO);
+        glDeleteBuffers(EBO);
+        glDeleteProgram(shaderProgram);
     }
 
     public static void main(String[] args) {
