@@ -1,5 +1,6 @@
 package nuvola;
 
+import nuvola.buffer.IndexBuffer;
 import nuvola.buffer.vertex.Position3DVertex;
 import nuvola.buffer.vertex.Vertex;
 import nuvola.buffer.VertexBuffer;
@@ -149,22 +150,13 @@ public class Main {
                 new Position3DVertex(-0.5f, -0.5f, 0.0f),  // bottom left
                 new Position3DVertex(-0.5f,  0.5f, 0.0f)   // top left
         );
-        int[] indices = {
+        List<Integer> indices = List.of(
                 0, 1, 3,  // first Triangle
                 1, 2, 3   // second Triangle
-        };
-
-        int EBO;
-        EBO = glGenBuffers();
-
+        );
 
         VertexBuffer vbo = new VertexBuffer(VertexLayout.POSITION_3D_LAYOUT, vertices, VertexBuffer.MemoryType.STATIC);
-        vbo.bind();
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
-
-        vbo.unbind();
+        IndexBuffer ebo = new IndexBuffer(indices);
 
         while (!glfwWindowShouldClose(window))
         {
@@ -173,6 +165,7 @@ public class Main {
 
             glUseProgram(shaderProgram);
             vbo.bind();
+            ebo.bind();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
             glfwSwapBuffers(window);
@@ -180,7 +173,7 @@ public class Main {
         }
 
         vbo.delete();
-        glDeleteBuffers(EBO);
+        ebo.delete();
         glDeleteProgram(shaderProgram);
     }
 
