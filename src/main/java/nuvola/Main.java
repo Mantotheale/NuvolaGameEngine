@@ -152,9 +152,8 @@ public class Main {
                 1, 2, 3   // second Triangle
         };
 
-        int VBO, VAO, EBO;
+        int VAO, EBO;
         VAO = glGenVertexArrays();
-        VBO = glGenBuffers();
         EBO = glGenBuffers();
 
         glBindVertexArray(VAO);
@@ -163,8 +162,11 @@ public class Main {
         for (Vertex v: vertices) {
             v.fill(vertexBuffer);
         }
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertexBuffer.flip(), GL_STATIC_DRAW);
+        vertexBuffer.flip();
+
+        VertexBuffer vbo = new VertexBuffer(vertices.length * 3 * Float.BYTES, VertexBuffer.MemoryType.STATIC);
+        vbo.fill(vertexBuffer);
+        vbo.bind();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
@@ -189,7 +191,7 @@ public class Main {
         }
 
         glDeleteVertexArrays(VAO);
-        glDeleteBuffers(VBO);
+        vbo.delete();
         glDeleteBuffers(EBO);
         glDeleteProgram(shaderProgram);
     }
