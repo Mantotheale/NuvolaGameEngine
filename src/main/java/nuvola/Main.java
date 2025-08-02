@@ -1,20 +1,22 @@
 package nuvola;
 
+import nuvola.buffer.vertex.Position3DVertex;
+import nuvola.buffer.vertex.Vertex;
+import nuvola.buffer.VertexBuffer;
+import nuvola.buffer.vertex.VertexLayout;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.List;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -141,41 +143,28 @@ public class Main {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
-        Vertex[] vertices = {
+        List<Vertex> vertices = List.of(
                 new Position3DVertex(0.5f,  0.5f, 0.0f),  // top right
                 new Position3DVertex(0.5f, -0.5f, 0.0f),  // bottom right
                 new Position3DVertex(-0.5f, -0.5f, 0.0f),  // bottom left
                 new Position3DVertex(-0.5f,  0.5f, 0.0f)   // top left
-        };
+        );
         int[] indices = {
                 0, 1, 3,  // first Triangle
                 1, 2, 3   // second Triangle
         };
 
-        int VAO, EBO;
-        VAO = glGenVertexArrays();
+        int EBO;
         EBO = glGenBuffers();
 
-        glBindVertexArray(VAO);
 
-        FloatBuffer vertexBuffer = MemoryUtil.memAllocFloat(vertices.length * 3);
-        for (Vertex v: vertices) {
-            v.fill(vertexBuffer);
-        }
-        vertexBuffer.flip();
-
-        VertexBuffer vbo = new VertexBuffer(vertices.length * 3 * Float.BYTES, VertexBuffer.MemoryType.STATIC);
-        vbo.fill(vertexBuffer);
+        VertexBuffer vbo = new VertexBuffer(VertexLayout.POSITION_3D_LAYOUT, vertices, VertexBuffer.MemoryType.STATIC);
         vbo.bind();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * Float.BYTES, 0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+        vbo.unbind();
 
         while (!glfwWindowShouldClose(window))
         {
@@ -183,14 +172,13 @@ public class Main {
             glClear(GL_COLOR_BUFFER_BIT);
 
             glUseProgram(shaderProgram);
-            glBindVertexArray(VAO);
+            vbo.bind();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
 
-        glDeleteVertexArrays(VAO);
         vbo.delete();
         glDeleteBuffers(EBO);
         glDeleteProgram(shaderProgram);

@@ -1,6 +1,6 @@
 package nuvola.exceptions;
 
-import nuvola.VertexBuffer;
+import nuvola.buffer.VertexBuffer;
 import org.jetbrains.annotations.NotNull;
 
 public class VertexBufferIsDeletedException extends RuntimeException {
