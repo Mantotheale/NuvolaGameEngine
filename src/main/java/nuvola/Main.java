@@ -5,7 +5,9 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -139,11 +141,11 @@ public class Main {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
-        float[] vertices = {
-                0.5f,  0.5f, 0.0f,  // top right
-                0.5f, -0.5f, 0.0f,  // bottom right
-                -0.5f, -0.5f, 0.0f,  // bottom left
-                -0.5f,  0.5f, 0.0f   // top left
+        Vertex[] vertices = {
+                new Position3DVertex(0.5f,  0.5f, 0.0f),  // top right
+                new Position3DVertex(0.5f, -0.5f, 0.0f),  // bottom right
+                new Position3DVertex(-0.5f, -0.5f, 0.0f),  // bottom left
+                new Position3DVertex(-0.5f,  0.5f, 0.0f)   // top left
         };
         int[] indices = {
                 0, 1, 3,  // first Triangle
@@ -157,8 +159,12 @@ public class Main {
 
         glBindVertexArray(VAO);
 
+        FloatBuffer vertexBuffer = MemoryUtil.memAllocFloat(vertices.length * 3);
+        for (Vertex v: vertices) {
+            v.fill(vertexBuffer);
+        }
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertexBuffer.flip(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);

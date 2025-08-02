@@ -104,5 +104,11 @@
             <artifactId>joml-primitives</artifactId>
             <version>${joml-primitives.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>24.0.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
