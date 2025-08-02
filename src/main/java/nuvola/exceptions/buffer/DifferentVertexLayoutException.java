@@ -1,4 +1,4 @@
-package nuvola.exceptions;
+package nuvola.exceptions.buffer;
 
 import nuvola.buffer.vertex.Vertex;
 import nuvola.buffer.VertexBuffer;

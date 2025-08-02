@@ -1,4 +1,4 @@
-package nuvola.exceptions;
+package nuvola.exceptions.buffer;
 
 import nuvola.buffer.IndexBuffer;
 import org.jetbrains.annotations.NotNull;

@@ -3,8 +3,8 @@ package nuvola.buffer;
 import nuvola.buffer.vertex.Vertex;
 import nuvola.buffer.vertex.VertexAttribute;
 import nuvola.buffer.vertex.VertexLayout;
-import nuvola.exceptions.DifferentVertexLayoutException;
-import nuvola.exceptions.VertexBufferIsDeletedException;
+import nuvola.exceptions.buffer.DifferentVertexLayoutException;
+import nuvola.exceptions.buffer.VertexBufferIsDeletedException;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryUtil;
 

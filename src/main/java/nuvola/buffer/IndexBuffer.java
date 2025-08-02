@@ -1,6 +1,6 @@
 package nuvola.buffer;
 
-import nuvola.exceptions.IndexBufferIsDeletedException;
+import nuvola.exceptions.buffer.IndexBufferIsDeletedException;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryUtil;
 
