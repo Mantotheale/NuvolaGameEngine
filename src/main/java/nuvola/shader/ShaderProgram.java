@@ -53,6 +53,17 @@ public class ShaderProgram {
         isDeleted = true;
     }
 
+    public void setUniform(String name, int value) {
+        bind();
+        glUniform1i(getUniformLocation(name), value);
+    }
+
+    private int getUniformLocation(String name) {
+        int location = glGetUniformLocation(id, name);
+        if (location == -1) { throw new ShaderUniformNotFoundException(this, name); }
+        return location;
+    }
+
     @Override
     public String toString() {
         return "id: " + id + "\ncontent:\n" + content;

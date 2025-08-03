@@ -18,7 +18,7 @@ class ShaderCompilationException extends RuntimeException {
 
 class ShaderIsDeletedException extends RuntimeException {
     public ShaderIsDeletedException(@NotNull ConcreteShader shader) {
-        super("The selected shader has already been deleted. Buffer: " + shader);
+        super("The selected shader has already been deleted. Shader: " + shader);
     }
 }
 
@@ -38,6 +38,12 @@ class ShaderProgramLinkingException extends RuntimeException {
 
 class ShaderProgramIsDeletedException extends RuntimeException {
     public ShaderProgramIsDeletedException(@NotNull ShaderProgram shader) {
-        super("The selected shader program has already been deleted. Buffer: " + shader);
+        super("The selected shader program has already been deleted. Program: " + shader);
+    }
+}
+
+class ShaderUniformNotFoundException extends RuntimeException {
+    public ShaderUniformNotFoundException(ShaderProgram shaderProgram, String uniformName) {
+        super("An uniform with name " + uniformName + " doesn't exist in shader:\n" + shaderProgram);
     }
 }

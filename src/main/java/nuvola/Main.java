@@ -9,13 +9,13 @@ import nuvola.shader.FragmentShader;
 import nuvola.shader.GeometryShader;
 import nuvola.shader.ShaderProgram;
 import nuvola.shader.VertexShader;
+import nuvola.texture.Texture;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.util.List;
@@ -23,11 +23,6 @@ import java.util.List;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL20.glGetUniformLocation;
-import static org.lwjgl.opengl.GL20.glUniform1i;
-import static org.lwjgl.opengl.GL30.glGenerateMipmap;
-import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -136,66 +131,22 @@ public class Main {
         VertexBuffer vbo = new VertexBuffer(VertexLayout.POSITION_3D_TEX_COORDS_2D_LAYOUT, vertices, VertexBuffer.MemoryType.STATIC);
         IndexBuffer ebo = new IndexBuffer(indices);
 
-        int texture1 = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, texture1);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        Path texturePath = Path.of("src/main/resources/textures");
+        Texture texture1 = new Texture(texturePath.resolve("container.jpg"), Texture.Channels.RGB);
+        Texture texture2 = new Texture(texturePath.resolve("awesomeface.png"), Texture.Channels.RGBA);
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer width = stack.mallocInt(1);
-            IntBuffer height = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-
-            stbi_set_flip_vertically_on_load(true);
-            ByteBuffer image = stbi_load("src/main/resources/textures/container.jpg", width, height, channels, 0);
-
-            if (image == null) throw new IllegalStateException("Couldn't open image");
-
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width.get(0), height.get(0), 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            stbi_image_free(image);
-        }
-
-        int texture2 = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, texture2);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer width = stack.mallocInt(1);
-            IntBuffer height = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-
-            ByteBuffer image = stbi_load("src/main/resources/textures/awesomeface.png", width, height, channels, 0);
-
-            if (image == null) throw new IllegalStateException("Couldn't open image");
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            stbi_image_free(image);
-        }
-
-
-        shader.bind();
-        glUniform1i(glGetUniformLocation(shader.id(), "texture1"), 0);
-        glUniform1i(glGetUniformLocation(shader.id(), "texture2"), 1);
+        texture1.bind(1);
+        texture2.bind(2);
 
         while (!glfwWindowShouldClose(window))
         {
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture1);
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, texture2);
-
             shader.bind();
+            shader.setUniform("texture1", texture1.boundSlot().get());
+            shader.setUniform("texture2", texture2.boundSlot().get());
+
             vbo.bind();
             ebo.bind();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
