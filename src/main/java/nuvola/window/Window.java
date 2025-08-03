@@ -37,7 +37,6 @@ public class Window {
         if (id == 0) { throw new GLFWFailedToOpenWindowException(); }
 
         glfwMakeContextCurrent(id);
-        glfwSwapInterval(1);
 
         GL.createCapabilities();
         glViewport(0, 0, width, height);
@@ -49,16 +48,16 @@ public class Window {
         });
     }
 
+    public void enableVsync() {
+        glfwSwapInterval(1);
+    }
+
+    public void disableVsync() {
+        glfwSwapInterval(0);
+    }
+
     public void swapBuffers() {
         glfwSwapBuffers(id);
-    }
-
-    public void signalClose() {
-        glfwSetWindowShouldClose(id, true);
-    }
-
-    public boolean shouldClose() {
-        return glfwWindowShouldClose(id);
     }
 
     public void close() {
@@ -69,11 +68,11 @@ public class Window {
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
     }
 
-    private void setFramebufferSizeCallback(@NotNull GLFWFramebufferSizeCallbackI callback) {
+    public void setFramebufferSizeCallback(@NotNull GLFWFramebufferSizeCallbackI callback) {
         glfwSetFramebufferSizeCallback(id, Objects.requireNonNull(callback));
     }
 
-    private void freeFramebufferSizeCallback() {
+    public void freeFramebufferSizeCallback() {
         glfwSetFramebufferSizeCallback(id, null);
     }
 
