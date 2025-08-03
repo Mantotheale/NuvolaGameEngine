@@ -16,6 +16,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -108,22 +109,9 @@ public class Main {
         // Set the clear color
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 
-        String vertexShaderSource = "#version 330 core\n" +
-                "layout (location = 0) in vec3 aPos;\n" +
-                "void main()\n" +
-                "{\n" +
-                "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n" +
-                "}\0";
-
-        String fragmentShaderSource = "#version 330 core\n" +
-                "out vec4 FragColor;\n" +
-                "void main()\n" +
-                "{\n" +
-                "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n" +
-                "}\n\0";
-
-        VertexShader vertexShader = VertexShader.parse(vertexShaderSource);
-        FragmentShader fragmentShader = FragmentShader.parse(fragmentShaderSource);
+        Path shaderPath = Path.of("src/main/resources/shaders");
+        VertexShader vertexShader = VertexShader.fromFile(shaderPath.resolve("vertex_shader.vert"));
+        FragmentShader fragmentShader = FragmentShader.fromFile(shaderPath.resolve("fragment_shader.frag"));
         ShaderProgram shader = new ShaderProgram(vertexShader, fragmentShader, GeometryShader.EMPTY);
         vertexShader.delete();
         fragmentShader.delete();
