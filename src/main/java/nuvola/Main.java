@@ -5,6 +5,10 @@ import nuvola.buffer.vertex.Position3DVertex;
 import nuvola.buffer.vertex.Vertex;
 import nuvola.buffer.VertexBuffer;
 import nuvola.buffer.vertex.VertexLayout;
+import nuvola.shader.FragmentShader;
+import nuvola.shader.GeometryShader;
+import nuvola.shader.ShaderProgram;
+import nuvola.shader.VertexShader;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -17,7 +21,6 @@ import java.util.List;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -119,30 +122,11 @@ public class Main {
                 "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n" +
                 "}\n\0";
 
-        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, vertexShaderSource);
-        glCompileShader(vertexShader);
-        if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
-            System.out.println("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" + glGetShaderInfoLog(vertexShader));
-        }
-
-        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, fragmentShaderSource);
-        glCompileShader(fragmentShader);
-        if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
-            System.out.println("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" + glGetShaderInfoLog(fragmentShader));
-        }
-
-
-        int shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-        if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
-            System.out.println("ERROR::SHADER::PROGRAM::LINKING_FAILED\n" + glGetProgramInfoLog(fragmentShader));
-        }
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
+        VertexShader vertexShader = VertexShader.parse(vertexShaderSource);
+        FragmentShader fragmentShader = FragmentShader.parse(fragmentShaderSource);
+        ShaderProgram shader = new ShaderProgram(vertexShader, fragmentShader, GeometryShader.EMPTY);
+        vertexShader.delete();
+        fragmentShader.delete();
 
         List<Vertex> vertices = List.of(
                 new Position3DVertex(0.5f,  0.5f, 0.0f),  // top right
@@ -163,7 +147,7 @@ public class Main {
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            glUseProgram(shaderProgram);
+            shader.bind();
             vbo.bind();
             ebo.bind();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -174,7 +158,7 @@ public class Main {
 
         vbo.delete();
         ebo.delete();
-        glDeleteProgram(shaderProgram);
+        shader.delete();
     }
 
     public static void main(String[] args) {
