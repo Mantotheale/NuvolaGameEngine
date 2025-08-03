@@ -1,7 +1,7 @@
 package nuvola;
 
 import nuvola.buffer.IndexBuffer;
-import nuvola.buffer.vertex.Position3DVertex;
+import nuvola.buffer.vertex.Position3DTexCoords2DVertex;
 import nuvola.buffer.vertex.Vertex;
 import nuvola.buffer.VertexBuffer;
 import nuvola.buffer.vertex.VertexLayout;
@@ -15,6 +15,7 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.util.List;
@@ -22,6 +23,11 @@ import java.util.List;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL20.glGetUniformLocation;
+import static org.lwjgl.opengl.GL20.glUniform1i;
+import static org.lwjgl.opengl.GL30.glGenerateMipmap;
+import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -110,30 +116,84 @@ public class Main {
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 
         Path shaderPath = Path.of("src/main/resources/shaders");
-        VertexShader vertexShader = VertexShader.fromFile(shaderPath.resolve("vertex_shader.vert"));
-        FragmentShader fragmentShader = FragmentShader.fromFile(shaderPath.resolve("fragment_shader.frag"));
+        VertexShader vertexShader = VertexShader.fromFile(shaderPath.resolve("texture_vertex_shader.vert"));
+        FragmentShader fragmentShader = FragmentShader.fromFile(shaderPath.resolve("texture_fragment_shader.frag"));
         ShaderProgram shader = new ShaderProgram(vertexShader, fragmentShader, GeometryShader.EMPTY);
         vertexShader.delete();
         fragmentShader.delete();
 
         List<Vertex> vertices = List.of(
-                new Position3DVertex(0.5f,  0.5f, 0.0f),  // top right
-                new Position3DVertex(0.5f, -0.5f, 0.0f),  // bottom right
-                new Position3DVertex(-0.5f, -0.5f, 0.0f),  // bottom left
-                new Position3DVertex(-0.5f,  0.5f, 0.0f)   // top left
+                new Position3DTexCoords2DVertex(0.5f,  0.5f, 0.0f, 1.0f, 1.0f),  // top right
+                new Position3DTexCoords2DVertex(0.5f, -0.5f, 0.0f, 1.0f, 0.0f),  // bottom right
+                new Position3DTexCoords2DVertex(-0.5f, -0.5f, 0.0f, 0.0f, 0.0f),  // bottom left
+                new Position3DTexCoords2DVertex(-0.5f,  0.5f, 0.0f, 0.0f, 1.0f)   // top left
         );
         List<Integer> indices = List.of(
                 0, 1, 3,  // first Triangle
                 1, 2, 3   // second Triangle
         );
 
-        VertexBuffer vbo = new VertexBuffer(VertexLayout.POSITION_3D_LAYOUT, vertices, VertexBuffer.MemoryType.STATIC);
+        VertexBuffer vbo = new VertexBuffer(VertexLayout.POSITION_3D_TEX_COORDS_2D_LAYOUT, vertices, VertexBuffer.MemoryType.STATIC);
         IndexBuffer ebo = new IndexBuffer(indices);
+
+        int texture1 = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer width = stack.mallocInt(1);
+            IntBuffer height = stack.mallocInt(1);
+            IntBuffer channels = stack.mallocInt(1);
+
+            stbi_set_flip_vertically_on_load(true);
+            ByteBuffer image = stbi_load("src/main/resources/textures/container.jpg", width, height, channels, 0);
+
+            if (image == null) throw new IllegalStateException("Couldn't open image");
+
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width.get(0), height.get(0), 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(image);
+        }
+
+        int texture2 = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer width = stack.mallocInt(1);
+            IntBuffer height = stack.mallocInt(1);
+            IntBuffer channels = stack.mallocInt(1);
+
+            ByteBuffer image = stbi_load("src/main/resources/textures/awesomeface.png", width, height, channels, 0);
+
+            if (image == null) throw new IllegalStateException("Couldn't open image");
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(image);
+        }
+
+
+        shader.bind();
+        glUniform1i(glGetUniformLocation(shader.id(), "texture1"), 0);
+        glUniform1i(glGetUniformLocation(shader.id(), "texture2"), 1);
 
         while (!glfwWindowShouldClose(window))
         {
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture2);
 
             shader.bind();
             vbo.bind();
